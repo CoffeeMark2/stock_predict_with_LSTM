@@ -37,7 +37,7 @@ class Config:
     # label_in_feature_index = [feature_columns.index(i) for i in label_columns]  # 这样写不行
     label_in_feature_index = (lambda x,y: [x.index(i) for i in y])(feature_columns, label_columns)  # 因为feature不一定从0开始
 
-    predict_day = 1             # 预测未来几天
+    predict_day = 1            # 预测未来几天
 
     # 网络参数
     input_size = len(feature_columns)
@@ -55,7 +55,7 @@ class Config:
     shuffle_train_data = True   # 是否对训练数据做shuffle
     use_cuda = False            # 是否使用GPU训练
 
-    train_data_rate = 0.3324      # 训练数据占总体数据比例，测试数据就是 1-train_data_rate
+    train_data_rate = 0.65      # 训练数据占总体数据比例，测试数据就是 1-train_data_rate
     valid_data_rate = 0.15      # 验证数据占训练数据比例，验证集在训练过程使用，为了做模型和参数选择
 
     batch_size = 64
@@ -234,6 +234,9 @@ def draw(config: Config, origin_data: Data, logger, predict_norm_data: np.ndarra
 
         plt.show()
 
+        #
+        predict_data
+
 def main(config):
     logger = load_logger(config)
     try:
@@ -247,7 +250,11 @@ def main(config):
         if config.do_predict:
             test_X, test_Y = data_gainer.get_test_data(return_label_data=True)
             pred_result = predict(config, test_X)       # 这里输出的是未还原的归一化预测数据
-            print(pred_result)
+            print(pred_result.shape)
+            result_df=pd.DataFrame(pred_result)
+            result_df.to_csv("result.csv")
+
+
             draw(config, data_gainer, logger, pred_result)
     except Exception:
         logger.error("Run Error", exc_info=True)
