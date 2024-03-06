@@ -32,8 +32,8 @@ else:
 
 class Config:
     # 数据参数
-    feature_columns = list(range(2, 9))     # 要作为feature的列，按原数据从0开始计算，也可以用list 如 [2,4,6,8] 设置
-    label_columns = [4, 5]                  # 要预测的列，按原数据从0开始计算, 如同时预测第四，五列 最低价和最高价
+    feature_columns = list(range(2, 8))     # 要作为feature的列，按原数据从0开始计算，也可以用list 如 [2,4,6,8] 设置
+    label_columns = [2]                  # 要预测的列，按原数据从0开始计算, 如同时预测第四，五列 最低价和最高价
     # label_in_feature_index = [feature_columns.index(i) for i in label_columns]  # 这样写不行
     label_in_feature_index = (lambda x,y: [x.index(i) for i in y])(feature_columns, label_columns)  # 因为feature不一定从0开始
 
@@ -46,7 +46,7 @@ class Config:
     hidden_size = 128           # LSTM的隐藏层大小，也是输出大小
     lstm_layers = 2             # LSTM的堆叠层数
     dropout_rate = 0.2          # dropout概率
-    time_step = 20              # 这个参数很重要，是设置用前多少天的数据来预测，也是LSTM的time step数，请保证训练数据量大于它
+    time_step = 30              # 这个参数很重要，是设置用前多少天的数据来预测，也是LSTM的time step数，请保证训练数据量大于它
 
     # 训练参数
     do_train = True
@@ -55,7 +55,7 @@ class Config:
     shuffle_train_data = True   # 是否对训练数据做shuffle
     use_cuda = False            # 是否使用GPU训练
 
-    train_data_rate = 0.95      # 训练数据占总体数据比例，测试数据就是 1-train_data_rate
+    train_data_rate = 0.3324      # 训练数据占总体数据比例，测试数据就是 1-train_data_rate
     valid_data_rate = 0.15      # 验证数据占训练数据比例，验证集在训练过程使用，为了做模型和参数选择
 
     batch_size = 64
@@ -81,7 +81,7 @@ class Config:
     model_name = "model_" + continue_flag + used_frame + model_postfix[used_frame]
 
     # 路径参数
-    train_data_path = "./data/stock_data.csv"
+    train_data_path = "./data/test.csv"
     model_save_path = "./checkpoint/" + used_frame + "/"
     figure_save_path = "./figure/"
     log_save_path = "./log/"
@@ -247,6 +247,7 @@ def main(config):
         if config.do_predict:
             test_X, test_Y = data_gainer.get_test_data(return_label_data=True)
             pred_result = predict(config, test_X)       # 这里输出的是未还原的归一化预测数据
+            print(pred_result)
             draw(config, data_gainer, logger, pred_result)
     except Exception:
         logger.error("Run Error", exc_info=True)

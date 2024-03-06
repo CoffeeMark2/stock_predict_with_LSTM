@@ -130,6 +130,8 @@ def predict(config, test_X):
             feed_dict = {model.X: test_X[step : (step + 1)]}
             test_pred = sess.run(model.pred, feed_dict=feed_dict)
             result[step*config.time_step : (step + 1)*config.time_step] = test_pred[0,:,:]
+
+    print(result.shape())
     return result
 
 
