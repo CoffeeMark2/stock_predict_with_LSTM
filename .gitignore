@@ -4,4 +4,4 @@
 *.log
 *.swp
 /log
-
+/data

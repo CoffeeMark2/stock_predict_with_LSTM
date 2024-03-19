@@ -68,7 +68,7 @@ class Config:
     patience = 5                # 训练多少epoch，验证集没提升就停掉
     random_seed = 42            # 随机种子，保证可复现
 
-    do_continue_train = True    # 每次训练把上一次的final_state作为下一次的init_state，仅用于RNN类型模型，目前仅支持pytorch
+    do_continue_train = False    # 每次训练把上一次的final_state作为下一次的init_state，仅用于RNN类型模型，目前仅支持pytorch
     continue_flag = ""           # 但实际效果不佳，可能原因：仅能以 batch_size = 1 训练
     if do_continue_train:
         shuffle_train_data = False
