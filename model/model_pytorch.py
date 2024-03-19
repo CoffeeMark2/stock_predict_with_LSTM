@@ -22,12 +22,15 @@ class Net(Module):
     '''
     def __init__(self, config):
         super(Net, self).__init__()
-        if config.model_name=="LSTM":
-            self.lstm = LSTM(input_size=config.input_size, hidden_size=config.hidden_size,
+        # if config.my_model_name=="LSTM":
+        #     self.lstm = LSTM(input_size=config.input_size, hidden_size=config.hidden_size,
+        #                 num_layers=config.lstm_layers, batch_first=True, dropout=config.dropout_rate)
+        # if config.my_model_name=="GRU":
+        #     self.lstm = GRU(input_size=config.input_size, hidden_size=config.hidden_size,
+        #                     num_layers=config.lstm_layers, batch_first=True, dropout=config.dropout_rate)
+        self.lstm = GRU(input_size=config.input_size, hidden_size=config.hidden_size,
                         num_layers=config.lstm_layers, batch_first=True, dropout=config.dropout_rate)
-        if config.model_name=="GRU":
-            self.lstm = GRU(input_size=config.input_size, hidden_size=config.hidden_size,
-                            num_layers=config.lstm_layers, batch_first=True, dropout=config.dropout_rate)
+        
         self.linear = Linear(in_features=config.hidden_size, out_features=config.output_size)
 
     def forward(self, x, hidden=None):

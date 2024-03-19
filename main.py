@@ -80,7 +80,7 @@ class Config:
     debug_num = 500  # 仅用debug_num条数据来调试
 
     # 框架参数
-    model_name="GRU"
+    my_model_name="GRU"
     used_frame = frame  # 选择的深度学习框架，不同的框架模型保存后缀不一样
     model_postfix = {"pytorch": ".pth", "keras": ".h5", "tensorflow": ".ckpt"}
     model_name = "model_" + continue_flag + used_frame + model_postfix[used_frame]
@@ -89,7 +89,7 @@ class Config:
     kdcode="000001.SZ"
     train_data_path = f"./data/split/{kdcode}_train.csv"
     test_data_path=f"./data/split/{kdcode}_test.csv"
-    result_path=f"./data/{model_name}_predict.csv"
+    result_path=f"./data/{my_model_name}_predict.csv"
     
     model_save_path = "./checkpoint/" + used_frame + "/"
     figure_save_path = "./figure/"
@@ -299,7 +299,7 @@ if __name__=="__main__":
     # parser.add_argument("-b", "--batch_size", default=64, type=int, help="batch size")
     # parser.add_argument("-e", "--epoch", default=20, type=int, help="epochs num")
     parser.add_argument("-k", "--kdcode", default="000001.SZ", type=str, help="stoke to train")
-    parser.add_argument("-m", "--model_name", default="LSTM", type=str, help="which Recrent model to use")
+    parser.add_argument("-m", "--,my_model_name", default="GRU", type=str, help="which Recrent model to use")
     #parser.add_argument("-c", "--do_continue_train", default=True, type=bool, help="whether use continue_train mode")
     
     args = parser.parse_args()
