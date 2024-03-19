@@ -32,9 +32,11 @@ else:
 
 class Config:
     # 数据参数
-    feature_columns = list(range(2, 8))     # 要作为feature的列，按原数据从0开始计算，也可以用list 如 [2,4,6,8] 设置
-    label_columns = [2]                  # 要预测的列，按原数据从0开始计算, 如同时预测第四，五列 最低价和最高价
+    feature_columns = list(range(2, 9))     # 要作为feature的列，按原数据从0开始计算，也可以用list 如 [2,4,6,8] 设置
+    label_columns = [8]                  # 要预测的列，按原数据从0开始计算, 如同时预测第四，五列 最低价和最高价
     # label_in_feature_index = [feature_columns.index(i) for i in label_columns]  # 这样写不行
+    
+    # label are not in the feature_columns
     label_in_feature_index = (lambda x,y: [x.index(i) for i in y])(feature_columns, label_columns)  # 因为feature不一定从0开始
 
     predict_day = 1            # 预测未来几天
@@ -52,10 +54,12 @@ class Config:
     do_train = True
     do_predict = True
     add_train = False           # 是否载入已有模型参数进行增量训练
-    shuffle_train_data = True   # 是否对训练数据做shuffle
+    shuffle_train_data = False   # 是否对训练数据做shuffle
     use_cuda = False            # 是否使用GPU训练
 
-    train_data_rate = 0.65      # 训练数据占总体数据比例，测试数据就是 1-train_data_rate
+    #train_data_rate = 0.65      # 训练数据占总体数据比例，测试数据就是 1-train_data_rate
+    train_num= 485              #根据输入的大小调整
+    test_num = 242
     valid_data_rate = 0.15      # 验证数据占训练数据比例，验证集在训练过程使用，为了做模型和参数选择
 
     batch_size = 64
@@ -81,7 +85,11 @@ class Config:
     model_name = "model_" + continue_flag + used_frame + model_postfix[used_frame]
 
     # 路径参数
-    train_data_path = "./data/test.csv"
+    kdcode="000002.SZ"
+    train_data_path = f"./data/{kdcode}_train.csv"
+    test_data_path=f"./data/{kdcode}_test.csv"
+    result_path="./data/result.csv"
+    
     model_save_path = "./checkpoint/" + used_frame + "/"
     figure_save_path = "./figure/"
     log_save_path = "./log/"
@@ -98,26 +106,40 @@ class Config:
         log_save_path = log_save_path + cur_time + '_' + used_frame + "/"
         os.makedirs(log_save_path)
 
-
 class Data:
     def __init__(self, config):
         self.config = config
-        self.data, self.data_column_name = self.read_data()
+        # how to trans datafile name into it and read it?
+        # use config?
+        self.data, self.data_column_name = self.my_read_data()
 
         self.data_num = self.data.shape[0]
-        self.train_num = int(self.data_num * self.config.train_data_rate)
 
-        self.mean = np.mean(self.data, axis=0)              # 数据的均值和方差
-        self.std = np.std(self.data, axis=0)
-        self.norm_data = (self.data - self.mean)/self.std   # 归一化，去量纲
-
+        #use data from 2021-2022 to train
+        # self.train_num = int(self.data_num * self.config.train_data_rate)
+        self.train_num=self.config.train_num
+        
+        # self.norm_data = self.get_norm_data(range(self.data.shape[1]))
+        self.norm_data=self.data
+        # print(self.norm_data)
         self.start_num_in_test = 0      # 测试集中前几天的数据会被删掉，因为它不够一个time_step
-
+    
+    
+    def my_read_data(self):
+        train_data=pd.read_csv(self.config.train_data_path,usecols=self.config.feature_columns)
+        test_data=pd.read_csv(self.config.test_data_path,usecols=self.config.feature_columns)
+        self.config.train_num=train_data.shape[0]
+        self.config.test_num=test_data.shape[0]
+        norm_data=pd.concat([train_data,test_data],ignore_index=True)
+        print(norm_data)
+        return norm_data.values,norm_data.columns.to_list()
+    
     def read_data(self):                # 读取初始数据
         if self.config.debug_mode:
             init_data = pd.read_csv(self.config.train_data_path, nrows=self.config.debug_num,
                                     usecols=self.config.feature_columns)
         else:
+            #do the normalize
             init_data = pd.read_csv(self.config.train_data_path, usecols=self.config.feature_columns)
         return init_data.values, init_data.columns.tolist()     # .columns.tolist() 是获取列名
 
@@ -150,7 +172,7 @@ class Data:
         return train_x, valid_x, train_y, valid_y
 
     def get_test_data(self, return_label_data=False):
-        feature_data = self.norm_data[self.train_num:]
+        feature_data = self.norm_data[self.train_num-self.config.time_step:]
         sample_interval = min(feature_data.shape[0], self.config.time_step)     # 防止time_step大于测试集数量
         self.start_num_in_test = feature_data.shape[0] % sample_interval  # 这些天的数据不够一个sample_interval
         time_step_size = feature_data.shape[0] // sample_interval
@@ -200,8 +222,9 @@ def load_logger(config):
 def draw(config: Config, origin_data: Data, logger, predict_norm_data: np.ndarray):
     label_data = origin_data.data[origin_data.train_num + origin_data.start_num_in_test : ,
                                             config.label_in_feature_index]
-    predict_data = predict_norm_data * origin_data.std[config.label_in_feature_index] + \
-                   origin_data.mean[config.label_in_feature_index]   # 通过保存的均值和方差还原数据
+    predict_data = predict_norm_data
+    # predict_data = predict_norm_data * origin_data.std[config.label_in_feature_index] + \
+    #                origin_data.mean[config.label_in_feature_index]   # 通过保存的均值和方差还原数据
     assert label_data.shape[0]==predict_data.shape[0], "The element number in origin and predicted data is different"
 
     label_name = [origin_data.data_column_name[i] for i in config.label_in_feature_index]
@@ -215,7 +238,7 @@ def draw(config: Config, origin_data: Data, logger, predict_norm_data: np.ndarra
     # logger.info("The mean squared error of stock {} is ".format(label_name) + str(loss_norm))
 
     loss = np.mean((label_data[config.predict_day:] - predict_data[:-config.predict_day] ) ** 2, axis=0)
-    loss_norm = loss/(origin_data.std[config.label_in_feature_index] ** 2)
+    loss_norm = loss/(origin_data.norm_data[config.label_in_feature_index] ** 2)
     logger.info("The mean squared error of stock {} is ".format(label_name) + str(loss_norm))
 
     label_X = range(origin_data.data_num - origin_data.train_num - origin_data.start_num_in_test)
@@ -250,12 +273,18 @@ def main(config):
         if config.do_predict:
             test_X, test_Y = data_gainer.get_test_data(return_label_data=True)
             pred_result = predict(config, test_X)       # 这里输出的是未还原的归一化预测数据
-            print(pred_result.shape)
-            result_df=pd.DataFrame(pred_result)
-            result_df.to_csv("result.csv")
+            result_df=pd.DataFrame(pred_result,columns=[config.kdcode]).tail(config.test_num).reset_index(drop=True)
+            print(f"result_df shape\n",result_df.shape)
+            
+            if os.path.exists(config.result_path):
+                org_df=pd.read_csv(config.result_path)
+                org_df[config.kdcode]=result_df
+                org_df.to_csv(config.result_path,index=False)
+            else:
+                result_df.to_csv(config.result_path,index=False)
 
-
-            draw(config, data_gainer, logger, pred_result)
+            #draw(config, data_gainer, logger, pred_result)
+            
     except Exception:
         logger.error("Run Error", exc_info=True)
 

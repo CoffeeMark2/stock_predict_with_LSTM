@@ -13,6 +13,8 @@ from torch.nn import Module, LSTM, Linear
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 
+pf=0
+
 class Net(Module):
     '''
     pytorch预测模型，包括LSTM时序预测层和Linear回归输出层
@@ -38,7 +40,11 @@ def train(config, logger, train_and_valid_data):
     train_X, train_Y, valid_X, valid_Y = train_and_valid_data
     train_X, train_Y = torch.from_numpy(train_X).float(), torch.from_numpy(train_Y).float()     # 先转为Tensor
     train_loader = DataLoader(TensorDataset(train_X, train_Y), batch_size=config.batch_size)    # DataLoader可自动生成可训练的batch数据
-
+    if(pf):
+        print("train_X and train_Y")
+        print(train_X.shape)
+        print(train_Y.shape)
+    
     valid_X, valid_Y = torch.from_numpy(valid_X).float(), torch.from_numpy(valid_Y).float()
     valid_loader = DataLoader(TensorDataset(valid_X, valid_Y), batch_size=config.batch_size)
 
@@ -61,7 +67,11 @@ def train(config, logger, train_and_valid_data):
             _train_X, _train_Y = _data[0].to(device),_data[1].to(device)
             optimizer.zero_grad()               # 训练前要将梯度信息置 0
             pred_Y, hidden_train = model(_train_X, hidden_train)    # 这里走的就是前向计算forward函数
-
+            if pf:
+                print("iterate _train_X, _train_Y")
+                print(_train_X.shape)
+                print(_train_Y.shape)
+                print(pred_Y.shape)
             if not config.do_continue_train:
                 hidden_train = None             # 如果非连续训练，把hidden重置即可
             else:
@@ -131,6 +141,13 @@ def predict(config, test_X):
         pred_X, hidden_predict = model(data_X, hidden_predict)
         # if not config.do_continue_train: hidden_predict = None    # 实验发现无论是否是连续训练模式，把上一个time_step的hidden传入下一个效果都更好
         cur_pred = torch.squeeze(pred_X, dim=0)
+        
+        if pf:
+            print("predict")
+            print(_data)
+            print(pred_X)
+            print(cur_pred)
+            
         result = torch.cat((result, cur_pred), dim=0)
 
     return result.detach().cpu().numpy()    # 先去梯度信息，如果在gpu要转到cpu，最后要返回numpy数据
