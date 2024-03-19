@@ -68,7 +68,7 @@ class Config:
     patience = 5                # 训练多少epoch，验证集没提升就停掉
     random_seed = 42            # 随机种子，保证可复现
 
-    do_continue_train = False    # 每次训练把上一次的final_state作为下一次的init_state，仅用于RNN类型模型，目前仅支持pytorch
+    do_continue_train = True    # 每次训练把上一次的final_state作为下一次的init_state，仅用于RNN类型模型，目前仅支持pytorch
     continue_flag = ""           # 但实际效果不佳，可能原因：仅能以 batch_size = 1 训练
     if do_continue_train:
         shuffle_train_data = False
@@ -80,15 +80,16 @@ class Config:
     debug_num = 500  # 仅用debug_num条数据来调试
 
     # 框架参数
+    model_name="GRU"
     used_frame = frame  # 选择的深度学习框架，不同的框架模型保存后缀不一样
     model_postfix = {"pytorch": ".pth", "keras": ".h5", "tensorflow": ".ckpt"}
     model_name = "model_" + continue_flag + used_frame + model_postfix[used_frame]
 
     # 路径参数
-    kdcode="000002.SZ"
-    train_data_path = f"./data/{kdcode}_train.csv"
-    test_data_path=f"./data/{kdcode}_test.csv"
-    result_path="./data/result.csv"
+    kdcode="000001.SZ"
+    train_data_path = f"./data/split/{kdcode}_train.csv"
+    test_data_path=f"./data/split/{kdcode}_test.csv"
+    result_path=f"./data/{model_name}_predict.csv"
     
     model_save_path = "./checkpoint/" + used_frame + "/"
     figure_save_path = "./figure/"
@@ -131,6 +132,7 @@ class Data:
         self.config.train_num=train_data.shape[0]
         self.config.test_num=test_data.shape[0]
         norm_data=pd.concat([train_data,test_data],ignore_index=True)
+        print("data display: ")
         print(norm_data)
         return norm_data.values,norm_data.columns.to_list()
     
@@ -293,15 +295,29 @@ if __name__=="__main__":
     import argparse
     # argparse方便于命令行下输入参数，可以根据需要增加更多
     parser = argparse.ArgumentParser()
-    # parser.add_argument("-t", "--do_train", default=False, type=bool, help="whether to train")
-    # parser.add_argument("-p", "--do_predict", default=True, type=bool, help="whether to train")
+    
     # parser.add_argument("-b", "--batch_size", default=64, type=int, help="batch size")
     # parser.add_argument("-e", "--epoch", default=20, type=int, help="epochs num")
+    parser.add_argument("-k", "--kdcode", default="000001.SZ", type=str, help="stoke to train")
+    parser.add_argument("-m", "--model_name", default="LSTM", type=str, help="which Recrent model to use")
+    #parser.add_argument("-c", "--do_continue_train", default=True, type=bool, help="whether use continue_train mode")
+    
     args = parser.parse_args()
 
+    for arg in vars(args):
+        print(f"{arg}: {getattr(args, arg)}")
+        
     con = Config()
     for key in dir(args):               # dir(args) 函数获得args所有的属性
         if not key.startswith("_"):     # 去掉 args 自带属性，比如__name__等
             setattr(con, key, getattr(args, key))   # 将属性值赋给Config
+    
 
     main(con)
+    
+    
+    # parser.add_argument("-t", "--do_train", default=False, type=bool, help="whether to train")
+    # parser.add_argument("-p", "--do_predict", default=True, type=bool, help="whether to train")
+    # parser.add_argument("-b", "--batch_size", default=64, type=int, help="batch size")
+    # parser.add_argument("-e", "--epoch", default=20, type=int, help="epochs num")
+

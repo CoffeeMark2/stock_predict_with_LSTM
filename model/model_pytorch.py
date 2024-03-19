@@ -9,7 +9,7 @@ pytorch 模型
 """
 
 import torch
-from torch.nn import Module, LSTM, Linear
+from torch.nn import Module, LSTM, Linear, GRU
 from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 
@@ -22,8 +22,12 @@ class Net(Module):
     '''
     def __init__(self, config):
         super(Net, self).__init__()
-        self.lstm = LSTM(input_size=config.input_size, hidden_size=config.hidden_size,
-                         num_layers=config.lstm_layers, batch_first=True, dropout=config.dropout_rate)
+        if config.model_name=="LSTM":
+            self.lstm = LSTM(input_size=config.input_size, hidden_size=config.hidden_size,
+                        num_layers=config.lstm_layers, batch_first=True, dropout=config.dropout_rate)
+        if config.model_name=="GRU":
+            self.lstm = GRU(input_size=config.input_size, hidden_size=config.hidden_size,
+                            num_layers=config.lstm_layers, batch_first=True, dropout=config.dropout_rate)
         self.linear = Linear(in_features=config.hidden_size, out_features=config.output_size)
 
     def forward(self, x, hidden=None):
